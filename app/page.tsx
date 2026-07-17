@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { AdminPanel } from "./AdminPanel";
 
@@ -57,7 +58,13 @@ export default function Home() {
   const totalSlides = profiles.length + 1;
 
   useEffect(() => {
-    setAdminAuthenticated(sessionStorage.getItem("omarkez-admin-session") === "active");
+    const frame = window.requestAnimationFrame(() => {
+      setAdminAuthenticated(
+        sessionStorage.getItem("omarkez-admin-session") === "active",
+      );
+    });
+
+    return () => window.cancelAnimationFrame(frame);
   }, []);
 
   useEffect(() => {
@@ -182,7 +189,7 @@ export default function Home() {
               style={{ "--delay": `${index * 80}ms` } as React.CSSProperties}
             >
               <span className="portrait">
-                <img
+                <Image
                   className={
                     profile.id === "contact"
                       ? "portrait-image portrait-image-contact"
@@ -190,7 +197,9 @@ export default function Home() {
                   }
                   src={profile.image}
                   alt=""
-                  loading={index === 0 ? "eager" : "lazy"}
+                  fill
+                  priority={index === 0}
+                  sizes="(max-width: 700px) 66vw, 180px"
                 />
                 {profile.id === "contact" && (
                   <span className="contact-badge">FALE COMIGO</span>

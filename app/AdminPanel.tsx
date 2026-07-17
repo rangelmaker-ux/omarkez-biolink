@@ -86,18 +86,22 @@ export function AdminPanel({ onExit }: { onExit: () => void }) {
   });
 
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem("omarkez-admin-demo");
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed.profiles)) setProfiles(parsed.profiles);
-        if (Array.isArray(parsed.cards)) setCards(parsed.cards);
-        if (parsed.appearance) setAppearance(parsed.appearance);
+    const frame = window.requestAnimationFrame(() => {
+      try {
+        const saved = localStorage.getItem("omarkez-admin-demo");
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed.profiles)) setProfiles(parsed.profiles);
+          if (Array.isArray(parsed.cards)) setCards(parsed.cards);
+          if (parsed.appearance) setAppearance(parsed.appearance);
+        }
+      } catch {
+        // Keep the safe defaults if browser storage was cleared or malformed.
       }
-    } catch {
-      // Keep the safe defaults if browser storage was cleared or malformed.
-    }
-    setLoaded(true);
+      setLoaded(true);
+    });
+
+    return () => window.cancelAnimationFrame(frame);
   }, []);
 
   useEffect(() => {
@@ -252,6 +256,8 @@ export function AdminPanel({ onExit }: { onExit: () => void }) {
             <div className="admin-profile-list">
               {profiles.map((profile) => (
                 <article className="admin-profile-row" key={profile.id}>
+                  {/* URLs entered by the admin can come from any storage provider. */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={profile.image} alt="" />
                   <div className="admin-profile-fields">
                     <label htmlFor={`name-${profile.id}`}>Nome</label>

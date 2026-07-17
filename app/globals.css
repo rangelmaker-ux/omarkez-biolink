@@ -23,7 +23,7 @@ body {
 }
 
 body {
-  font-family: var(--font-geist), Arial, sans-serif;
+  font-family: Inter, "Segoe UI", Arial, sans-serif;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
 }
