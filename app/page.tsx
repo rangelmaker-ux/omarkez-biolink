@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const profiles = [
   {
@@ -28,6 +28,9 @@ export default function Home() {
     null,
   );
   const [selectedProfile, setSelectedProfile] = useState("");
+  const [activeSlide, setActiveSlide] = useState(0);
+  const carouselRef = useRef<HTMLDivElement>(null);
+  const totalSlides = profiles.length + 1;
 
   useEffect(() => {
     if (!dialog) return;
@@ -43,14 +46,39 @@ export default function Home() {
     setDialog("profile");
   }
 
+  function goToSlide(index: number) {
+    const next = Math.max(0, Math.min(index, totalSlides - 1));
+    const slide = carouselRef.current?.children[next] as HTMLElement | undefined;
+    slide?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+    setActiveSlide(next);
+  }
+
+  function syncActiveSlide() {
+    const carousel = carouselRef.current;
+    if (!carousel) return;
+    const center = carousel.scrollLeft + carousel.clientWidth / 2;
+    const slides = Array.from(carousel.children) as HTMLElement[];
+    let closest = 0;
+    let distance = Number.POSITIVE_INFINITY;
+    slides.forEach((slide, index) => {
+      const slideCenter = slide.offsetLeft + slide.offsetWidth / 2;
+      const nextDistance = Math.abs(center - slideCenter);
+      if (nextDistance < distance) {
+        distance = nextDistance;
+        closest = index;
+      }
+    });
+    setActiveSlide(closest);
+  }
+
   return (
     <main className="profile-shell">
       <div className="ambient ambient-one" />
       <div className="ambient ambient-two" />
 
-      <header className="brand" aria-label="O Markez">
+      <header className="brand" aria-label="@Omarx_">
         <span className="brand-mark">O</span>
-        <span className="brand-name">MARKEZ</span>
+        <span className="brand-name">@Omarx_</span>
       </header>
 
       <section className="profile-picker" aria-labelledby="picker-title">
@@ -60,7 +88,22 @@ export default function Home() {
           <p className="subtitle">Toque em um perfil para acessar os conteúdos.</p>
         </div>
 
-        <div className="profiles" role="list">
+        <div className="carousel-wrap">
+          <button
+            className="carousel-arrow carousel-arrow-left"
+            onClick={() => goToSlide(activeSlide - 1)}
+            disabled={activeSlide === 0}
+            aria-label="Perfil anterior"
+          >
+            ‹
+          </button>
+          <div
+            className="profiles"
+            role="list"
+            ref={carouselRef}
+            onScroll={syncActiveSlide}
+            aria-label="Perfis disponíveis"
+          >
           {profiles.map((profile, index) => (
             <button
               className="profile-card"
@@ -82,20 +125,48 @@ export default function Home() {
               <span className="profile-name">{profile.name}</span>
             </button>
           ))}
+            <button
+              className="profile-card add-profile-card"
+              onClick={() => setDialog("add")}
+              role="listitem"
+              aria-label="Adicionar novo perfil"
+            >
+              <span className="portrait add-portrait">
+                <span className="large-plus" aria-hidden="true">+</span>
+                <span className="add-caption">NOVO PERFIL</span>
+              </span>
+              <span className="profile-name">Adicionar perfil</span>
+            </button>
+          </div>
+          <button
+            className="carousel-arrow carousel-arrow-right"
+            onClick={() => goToSlide(activeSlide + 1)}
+            disabled={activeSlide === totalSlides - 1}
+            aria-label="Próximo perfil"
+          >
+            ›
+          </button>
+        </div>
+
+        <div className="carousel-dots" aria-label={`Item ${activeSlide + 1} de ${totalSlides}`}>
+          {Array.from({ length: totalSlides }).map((_, index) => (
+            <button
+              key={index}
+              className={index === activeSlide ? "dot dot-active" : "dot"}
+              onClick={() => goToSlide(index)}
+              aria-label={`Ir para item ${index + 1}`}
+            />
+          ))}
         </div>
 
         <div className="profile-actions">
-          <button className="secondary-action" onClick={() => setDialog("add")}>
-            <span className="plus" aria-hidden="true">+</span>
-            Adicionar perfil
-          </button>
           <button className="manage-action" onClick={() => setDialog("manage")}>
             Gerenciar perfis
           </button>
         </div>
       </section>
 
-      <footer>Conteúdo e configurações por O Markez</footer>
+      <footer>Conteúdo e configurações por @Omarx_</footer>
 
       {dialog && (
         <div className="modal-backdrop" onMouseDown={() => setDialog(null)}>

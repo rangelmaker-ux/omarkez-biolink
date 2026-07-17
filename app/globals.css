@@ -113,15 +113,30 @@ button {
 h1 { margin: 0; font-size: clamp(26px, 5.2vw, 48px); font-weight: 540; letter-spacing: -.045em; line-height: 1.02; }
 .subtitle { margin: 9px 0 0; color: var(--muted); font-size: clamp(12px, 1.8vw, 15px); }
 
-.profiles {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: clamp(10px, 2.2vw, 26px);
-  width: min(100%, 740px);
+.carousel-wrap {
+  position: relative;
+  width: min(100%, 860px);
   margin: auto;
 }
 
+.profiles {
+  display: flex;
+  gap: clamp(12px, 2.2vw, 26px);
+  width: 100%;
+  padding: 6px max(42px, calc(50% - 115px)) 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scroll-behavior: smooth;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  touch-action: pan-x;
+}
+
+.profiles::-webkit-scrollbar { display: none; }
+
 .profile-card {
+  flex: 0 0 min(64vw, 230px);
   min-width: 0;
   padding: 0;
   border: 0;
@@ -129,6 +144,8 @@ h1 { margin: 0; font-size: clamp(26px, 5.2vw, 48px); font-weight: 540; letter-sp
   cursor: pointer;
   animation: enter .55s both cubic-bezier(.2,.7,.2,1);
   animation-delay: var(--delay);
+  scroll-snap-align: center;
+  scroll-snap-stop: always;
 }
 
 .portrait {
@@ -154,7 +171,21 @@ h1 { margin: 0; font-size: clamp(26px, 5.2vw, 48px); font-weight: 540; letter-sp
 .profile-card:focus-visible .profile-name { color: #fff; }
 .profile-card:focus-visible { outline: none; }
 
-.profile-actions { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: clamp(18px, 4vh, 34px); }
+.add-portrait { display: grid; place-items: center; align-content: center; gap: 12px; border: 1px dashed #505057; background: radial-gradient(circle at 50% 38%, #25252b, #111115 65%); }
+.large-plus { display: grid; place-items: center; width: 68px; height: 68px; border: 2px solid #b4b4b8; border-radius: 50%; color: #fff; font-size: 50px; font-weight: 200; line-height: 1; transition: transform .3s ease, border-color .3s ease, background .3s ease; }
+.add-caption { color: #89898f; font-size: 9px; font-weight: 750; letter-spacing: .18em; }
+.add-profile-card:hover .large-plus { transform: rotate(90deg) scale(1.06); border-color: #fff; background: rgba(255,255,255,.08); }
+
+.carousel-arrow { position: absolute; z-index: 4; top: 45%; display: grid; place-items: center; width: 40px; height: 52px; padding: 0 0 5px; border: 1px solid #3d3d42; border-radius: 10px; background: rgba(10,10,11,.82); color: #fff; font-size: 36px; font-weight: 200; line-height: 1; backdrop-filter: blur(10px); cursor: pointer; transform: translateY(-50%); transition: opacity .2s, background .2s, transform .2s; }
+.carousel-arrow-left { left: 0; }
+.carousel-arrow-right { right: 0; }
+.carousel-arrow:hover:not(:disabled) { background: rgba(229,9,20,.88); transform: translateY(-50%) scale(1.05); }
+.carousel-arrow:disabled { opacity: .18; cursor: default; }
+.carousel-dots { display: flex; justify-content: center; gap: 6px; margin-top: 2px; }
+.dot { width: 6px; height: 6px; padding: 0; border: 0; border-radius: 999px; background: #45454a; cursor: pointer; transition: width .25s ease, background .25s ease; }
+.dot-active { width: 20px; background: var(--red); }
+
+.profile-actions { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: clamp(12px, 2.5vh, 22px); }
 .secondary-action,
 .manage-action { min-height: 42px; border-radius: 7px; padding: 0 16px; cursor: pointer; transition: background .2s, border-color .2s, transform .2s; }
 .secondary-action { display: flex; align-items: center; gap: 8px; border: 1px solid #3c3c40; background: #18181b; font-size: 12px; font-weight: 650; }
@@ -189,12 +220,26 @@ footer { align-self: end; padding-top: 8px; color: #55555b; font-size: 9px; lett
 @media (max-width: 480px) {
   .profile-shell { padding-left: 14px; padding-right: 14px; }
   .profile-picker { transform: translateY(-1vh); }
-  .profiles { gap: 8px; }
+  .carousel-wrap { width: calc(100% + 28px); margin-left: -14px; }
+  .profiles { width: 100%; gap: 12px; padding-left: 13vw; padding-right: 13vw; }
+  .profile-card { flex-basis: 74vw; }
   .portrait { border-radius: 7px; }
   .profile-actions { gap: 8px; }
-  .secondary-action, .manage-action { min-height: 40px; padding: 0 11px; }
+  .secondary-action, .manage-action { min-height: 40px; padding: 0 15px; }
   .secondary-action { font-size: 10px; }
   .manage-action { font-size: 9px; letter-spacing: .08em; }
+  .carousel-arrow { top: 44%; width: 34px; height: 48px; border-radius: 0 9px 9px 0; }
+  .carousel-arrow-left { left: 0; }
+  .carousel-arrow-right { right: 0; border-radius: 9px 0 0 9px; }
+}
+
+@media (max-width: 360px) {
+  .profile-shell { padding-left: 10px; padding-right: 10px; }
+  .brand-name { font-size: 11px; }
+  .profiles { gap: 9px; }
+  .profile-name { margin-left: 0; margin-right: 0; font-size: 9px; }
+  .profile-actions { width: 100%; }
+  .manage-action { width: min(100%, 220px); justify-content: center; padding: 0 7px; }
 }
 
 @media (max-height: 640px) {
@@ -203,10 +248,19 @@ footer { align-self: end; padding-top: 8px; color: #55555b; font-size: 9px; lett
   .brand-mark { width: 26px; height: 26px; }
   .heading-block { margin-bottom: 13px; }
   .subtitle { margin-top: 5px; }
-  .profiles { width: min(100%, 520px); }
+  .carousel-wrap { width: min(100%, 700px); }
   .profile-actions { margin-top: 13px; }
   .secondary-action, .manage-action { min-height: 36px; }
   footer { padding-top: 4px; }
+}
+
+@media (max-height: 560px) {
+  .eyebrow, .subtitle, footer { display: none; }
+  .heading-block { margin-bottom: 9px; }
+  h1 { font-size: 23px; }
+  .profiles { width: 100%; }
+  .profile-name { margin-top: 6px; }
+  .profile-actions { margin-top: 9px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -8,9 +8,9 @@ const geist = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "O Markez | Perfis",
+  title: "@Omarx_ | Perfis",
   description:
-    "Configurações, conteúdos e downloads de fotografia e vídeo por O Markez.",
+    "Configurações, conteúdos e downloads de fotografia e vídeo por @Omarx_.",
   icons: { icon: "/favicon.svg" },
 };
 
