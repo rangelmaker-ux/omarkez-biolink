@@ -2,7 +2,15 @@
 
 import { useEffect, useRef, useState } from "react";
 
-const profiles = [
+type Profile = {
+  id: string;
+  name: string;
+  shortName: string;
+  image: string;
+  href?: string;
+};
+
+const profiles: Profile[] = [
   {
     id: "luts",
     name: "LUTs",
@@ -20,6 +28,14 @@ const profiles = [
     name: "Configurações Blackmagic Cam",
     shortName: "BMC",
     image: "/profile-blackmagic.png",
+  },
+  {
+    id: "contact",
+    name: "Contato • WhatsApp",
+    shortName: "WhatsApp",
+    image: "/profile-contact.jpg",
+    href:
+      "https://wa.me/5566992352452?text=Ol%C3%A1%21%20Vim%20pelo%20seu%20perfil%20e%20gostaria%20de%20solicitar%20um%20or%C3%A7amento.",
   },
 ];
 
@@ -41,8 +57,12 @@ export default function Home() {
     return () => window.removeEventListener("keydown", closeOnEscape);
   }, [dialog]);
 
-  function openProfile(name: string) {
-    setSelectedProfile(name);
+  function openProfile(profile: Profile) {
+    if (profile.href) {
+      window.location.assign(profile.href);
+      return;
+    }
+    setSelectedProfile(profile.name);
     setDialog("profile");
   }
 
@@ -106,18 +126,29 @@ export default function Home() {
             <button
               className="profile-card"
               key={profile.id}
-              onClick={() => openProfile(profile.name)}
+              onClick={() => openProfile(profile)}
               role="listitem"
-              aria-label={`Abrir perfil ${profile.name}`}
+              aria-label={
+                profile.href
+                  ? "Entrar em contato pelo WhatsApp"
+                  : `Abrir perfil ${profile.name}`
+              }
               style={{ "--delay": `${index * 80}ms` } as React.CSSProperties}
             >
               <span className="portrait">
                 <img
-                  className="portrait-image"
+                  className={
+                    profile.id === "contact"
+                      ? "portrait-image portrait-image-contact"
+                      : "portrait-image"
+                  }
                   src={profile.image}
                   alt=""
                   loading={index === 0 ? "eager" : "lazy"}
                 />
+                {profile.id === "contact" && (
+                  <span className="contact-badge">FALE COMIGO</span>
+                )}
                 <span className="portrait-shine" />
               </span>
               <span className="profile-name">{profile.name}</span>
