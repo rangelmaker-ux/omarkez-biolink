@@ -76,9 +76,9 @@ export default function Home() {
       <div className="ambient ambient-one" />
       <div className="ambient ambient-two" />
 
-      <header className="brand" aria-label="@Omarx_">
+      <header className="brand" aria-label="@omarkez_">
         <span className="brand-mark">O</span>
-        <span className="brand-name">@Omarx_</span>
+        <span className="brand-name">@omarkez_</span>
       </header>
 
       <section className="profile-picker" aria-labelledby="picker-title">
@@ -166,7 +166,7 @@ export default function Home() {
         </div>
       </section>
 
-      <footer>Conteúdo e configurações por @Omarx_</footer>
+      <footer>Conteúdo e configurações por @omarkez_</footer>
 
       {dialog && (
         <div className="modal-backdrop" onMouseDown={() => setDialog(null)}>
