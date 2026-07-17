@@ -11,9 +11,9 @@ const profiles = [
   },
   {
     id: "sony",
-    name: "Configurações Sony ZV-10 Mark II",
-    shortName: "ZV-10",
-    image: "/profile-sony-zv10.png",
+    name: "Configurações Sony ZV-E10 Mark II",
+    shortName: "ZV-E10",
+    image: "/profile-sony-zve10.png",
   },
   {
     id: "blackmagic",
