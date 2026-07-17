@@ -81,10 +81,8 @@ export default function Home() {
         <span className="brand-name">@omarkez_</span>
       </header>
 
-      <section className="profile-picker" aria-labelledby="picker-title">
+      <section className="profile-picker" aria-label="Seleção de perfis">
         <div className="heading-block">
-          <p className="eyebrow">ESCOLHA SUA EXPERIÊNCIA</p>
-          <h1 id="picker-title">Quem está assistindo?</h1>
           <p className="subtitle">Toque em um perfil para acessar os conteúdos.</p>
         </div>
 

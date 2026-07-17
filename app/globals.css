@@ -109,9 +109,7 @@ button {
 }
 
 .heading-block { margin: 0 auto clamp(18px, 3.5vh, 34px); }
-.eyebrow { margin: 0 0 8px; color: var(--red); font-size: 10px; font-weight: 750; letter-spacing: .22em; }
-h1 { margin: 0; font-size: clamp(26px, 5.2vw, 48px); font-weight: 540; letter-spacing: -.045em; line-height: 1.02; }
-.subtitle { margin: 9px 0 0; color: var(--muted); font-size: clamp(12px, 1.8vw, 15px); }
+.subtitle { margin: 0; color: var(--muted); font-size: clamp(12px, 1.8vw, 15px); }
 
 .carousel-wrap {
   position: relative;
@@ -247,7 +245,6 @@ footer { align-self: end; padding-top: 8px; color: #55555b; font-size: 9px; lett
   .brand { height: 27px; }
   .brand-mark { width: 26px; height: 26px; }
   .heading-block { margin-bottom: 13px; }
-  .subtitle { margin-top: 5px; }
   .carousel-wrap { width: min(100%, 700px); }
   .profile-actions { margin-top: 13px; }
   .secondary-action, .manage-action { min-height: 36px; }
@@ -255,9 +252,8 @@ footer { align-self: end; padding-top: 8px; color: #55555b; font-size: 9px; lett
 }
 
 @media (max-height: 560px) {
-  .eyebrow, .subtitle, footer { display: none; }
+  .subtitle, footer { display: none; }
   .heading-block { margin-bottom: 9px; }
-  h1 { font-size: 23px; }
   .profiles { width: 100%; }
   .profile-name { margin-top: 6px; }
   .profile-actions { margin-top: 9px; }
