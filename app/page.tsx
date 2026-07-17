@@ -1,6 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { AdminPanel } from "./AdminPanel";
+
+const LOCAL_ADMIN_PASSWORD_HASH =
+  "7daa1b2b4e91b247ae0fecb856e9a08f00d1e1a7193273419e9819504b73152e";
 
 type Profile = {
   id: string;
@@ -45,8 +49,16 @@ export default function Home() {
   );
   const [selectedProfile, setSelectedProfile] = useState("");
   const [activeSlide, setActiveSlide] = useState(0);
+  const [adminAuthenticated, setAdminAuthenticated] = useState(false);
+  const [adminPassword, setAdminPassword] = useState("");
+  const [adminError, setAdminError] = useState("");
+  const [adminLoading, setAdminLoading] = useState(false);
   const carouselRef = useRef<HTMLDivElement>(null);
   const totalSlides = profiles.length + 1;
+
+  useEffect(() => {
+    setAdminAuthenticated(sessionStorage.getItem("omarkez-admin-session") === "active");
+  }, []);
 
   useEffect(() => {
     if (!dialog) return;
@@ -91,6 +103,36 @@ export default function Home() {
     setActiveSlide(closest);
   }
 
+  async function loginAdmin(event: React.FormEvent) {
+    event.preventDefault();
+    setAdminLoading(true);
+    setAdminError("");
+    const bytes = new TextEncoder().encode(adminPassword);
+    const digest = await crypto.subtle.digest("SHA-256", bytes);
+    const hash = Array.from(new Uint8Array(digest))
+      .map((byte) => byte.toString(16).padStart(2, "0"))
+      .join("");
+    await new Promise((resolve) => window.setTimeout(resolve, 420));
+    if (hash === LOCAL_ADMIN_PASSWORD_HASH) {
+      sessionStorage.setItem("omarkez-admin-session", "active");
+      setAdminAuthenticated(true);
+      setDialog(null);
+      setAdminPassword("");
+    } else {
+      setAdminError("Senha incorreta. Tente novamente.");
+    }
+    setAdminLoading(false);
+  }
+
+  function exitAdmin() {
+    sessionStorage.removeItem("omarkez-admin-session");
+    setAdminAuthenticated(false);
+  }
+
+  if (adminAuthenticated) {
+    return <AdminPanel onExit={exitAdmin} />;
+  }
+
   return (
     <main className="profile-shell">
       <div className="ambient ambient-one" />
@@ -124,7 +166,11 @@ export default function Home() {
           >
           {profiles.map((profile, index) => (
             <button
-              className="profile-card"
+              className={
+                index === activeSlide
+                  ? "profile-card profile-card-active"
+                  : "profile-card"
+              }
               key={profile.id}
               onClick={() => openProfile(profile)}
               role="listitem"
@@ -155,7 +201,11 @@ export default function Home() {
             </button>
           ))}
             <button
-              className="profile-card add-profile-card"
+              className={
+                activeSlide === profiles.length
+                  ? "profile-card add-profile-card profile-card-active"
+                  : "profile-card add-profile-card"
+              }
               onClick={() => setDialog("add")}
               role="listitem"
               aria-label="Adicionar novo perfil"
@@ -217,22 +267,28 @@ export default function Home() {
             {dialog === "manage" && (
               <>
                 <span className="modal-icon">•••</span>
-                <h2 id="modal-title">Área de gerenciamento</h2>
+                <h2 id="modal-title">Acesso do superusuário</h2>
                 <p>
-                  O acesso de superusuário será protegido pela senha que você
-                  definir.
+                  Entre para testar o painel administrativo local. A proteção
+                  definitiva será ativada no servidor com o Supabase.
                 </p>
-                <label htmlFor="password">Senha</label>
-                <input
-                  id="password"
-                  type="password"
-                  placeholder="Aguardando configuração"
-                  disabled
-                />
-                <button className="modal-primary" disabled>
-                  Acessar painel
-                </button>
-                <small>A senha será ativada na próxima etapa.</small>
+                <form onSubmit={loginAdmin}>
+                  <label htmlFor="password">Senha administrativa</label>
+                  <input
+                    id="password"
+                    type="password"
+                    value={adminPassword}
+                    onChange={(event) => setAdminPassword(event.target.value)}
+                    placeholder="Digite sua senha"
+                    autoComplete="current-password"
+                    autoFocus
+                  />
+                  {adminError && <span className="login-error" role="alert">{adminError}</span>}
+                  <button className="modal-primary" disabled={!adminPassword || adminLoading}>
+                    {adminLoading ? "Verificando..." : "Acessar painel"}
+                  </button>
+                </form>
+                <small>Modo de demonstração: dados salvos somente neste navegador.</small>
               </>
             )}
 
