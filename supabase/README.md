@@ -21,6 +21,6 @@
 Depois, configure no Vercel:
 
 - `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY` — pode receber a chave pública/publishable do projeto.
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` — chave pública/publishable do projeto.
 
 Não coloque a chave `service_role` no navegador.

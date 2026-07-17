@@ -31,12 +31,11 @@ Não é necessário configurar uma pasta interna: o projeto Next.js está na rai
 
 ## Supabase
 
-Quando o banco for conectado, copie as variáveis de `.env.example` para **Vercel → Project Settings → Environment Variables**:
+Copie as variáveis de `.env.example` para **Vercel → Project Settings → Environment Variables**:
 
 - `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY`
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
 
-A chave `SUPABASE_SERVICE_ROLE_KEY` é secreta e só pode ser usada no servidor. Nunca coloque essa chave em código executado no navegador.
+O projeto usa somente a chave pública no navegador. Nunca coloque a chave `service_role` no Vercel como variável pública.
 
-No estado atual, o painel administrativo é uma demonstração local: as edições ficam salvas apenas no navegador do aparelho. A sincronização entre celulares será ativada quando o Supabase e a autenticação segura forem conectados.
+Perfis, cards e aparência são sincronizados pelo Supabase. O acesso ao painel usa um usuário criado em **Authentication → Users** e autorizado na tabela `admin_users`.

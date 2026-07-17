@@ -42,6 +42,7 @@ button {
   isolation: isolate;
   display: grid;
   grid-template-rows: auto 1fr auto;
+  grid-template-columns: minmax(0, 1fr);
   width: 100%;
   min-height: 100vh;
   min-height: 100svh;
@@ -51,6 +52,10 @@ button {
     radial-gradient(circle at 50% -15%, rgba(229, 9, 20, .16), transparent 33%),
     linear-gradient(145deg, #111 0%, #070707 52%, #050505 100%);
 }
+
+.brand,
+.profile-picker,
+footer { min-width: 0; }
 
 .profile-shell::before {
   position: absolute;
@@ -106,6 +111,7 @@ button {
 .profile-picker {
   align-self: center;
   width: min(100%, 940px);
+  max-width: 100%;
   margin: 0 auto;
   text-align: center;
 }
@@ -116,6 +122,7 @@ button {
 .carousel-wrap {
   position: relative;
   width: min(100%, 860px);
+  min-width: 0;
   margin: auto;
 }
 
@@ -123,6 +130,7 @@ button {
   display: flex;
   gap: clamp(12px, 2.2vw, 26px);
   width: 100%;
+  min-width: 0;
   padding: 6px max(42px, calc(50% - 115px)) 12px;
   overflow-x: auto;
   overflow-y: hidden;
@@ -218,12 +226,23 @@ footer { align-self: end; padding-top: 8px; color: #55555b; font-size: 9px; lett
 .modal h2 { margin: 0; font-size: 24px; letter-spacing: -.03em; }
 .modal p { margin: 10px 0 20px; color: #aaaab0; font-size: 14px; line-height: 1.55; }
 .modal label { display: block; margin-bottom: 7px; color: #d7d7d9; font-size: 12px; font-weight: 650; }
+.modal .password-label { margin-top: 12px; }
 .modal input { width: 100%; height: 46px; padding: 0 13px; border: 1px solid #333338; border-radius: 7px; outline: 0; background: #0b0b0d; color: #fff; }
 .modal input:disabled { color: #777; }
 .modal-primary { width: 100%; min-height: 46px; margin-top: 14px; border: 0; border-radius: 7px; background: var(--red); font-weight: 750; cursor: pointer; }
 .modal-primary:disabled { background: #343438; color: #777; cursor: not-allowed; }
 .modal small { display: block; margin-top: 10px; color: #6f6f74; font-size: 10px; text-align: center; }
 .login-error { display: block; margin-top: 8px; color: #ff6169; font-size: 11px; }
+.profile-modal { width: min(100%, 560px); max-height: min(84svh, 720px); overflow-y: auto; }
+.profile-content-list { display: grid; gap: 10px; margin-top: 20px; }
+.profile-content-card { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; min-height: 68px; padding: 10px; border: 1px solid #303036; border-radius: 10px; background: #131316; color: #f4f4f5; text-decoration: none; transition: border-color .2s, background .2s, transform .2s; }
+.profile-content-card:hover, .profile-content-card:focus-visible { border-color: var(--red); background: #1b1b1f; outline: none; transform: translateY(-1px); }
+.profile-content-image { width: 54px; height: 54px; border-radius: 7px; background-position: center; background-size: cover; }
+.profile-content-copy { display: grid; gap: 5px; min-width: 0; }
+.profile-content-copy strong { overflow: hidden; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+.profile-content-copy small { margin: 0; color: #85858b; font-size: 10px; text-align: left; }
+.profile-content-action { color: var(--red); font-size: 9px; font-weight: 850; letter-spacing: .06em; text-transform: uppercase; }
+.reduced-motion *, .reduced-motion *::before, .reduced-motion *::after { scroll-behavior: auto !important; animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
 
 /* Local superuser prototype */
 .admin-shell {
@@ -250,6 +269,8 @@ footer { align-self: end; padding-top: 8px; color: #55555b; font-size: 9px; lett
 .admin-nav-active span { color: var(--admin-accent); }
 .admin-local-note { margin-top: auto; padding: 14px; border: 1px solid #323237; border-radius: 10px; background: #18181c; }
 .admin-local-note span { color: #ffb020; font-size: 8px; font-weight: 850; letter-spacing: .16em; }
+.admin-cloud-note { border-color: rgba(46,212,122,.25); background: rgba(46,212,122,.06); }
+.admin-cloud-note span { color: #49df8d; }
 .admin-local-note p { margin: 8px 0 0; color: #85858c; font-size: 10px; line-height: 1.45; }
 .admin-exit { min-height: 39px; margin-top: 10px; border: 1px solid #34343a; border-radius: 8px; background: transparent; color: #94949a; font-size: 10px; font-weight: 750; cursor: pointer; }
 .admin-exit:hover { border-color: #777; color: #fff; }
@@ -261,6 +282,9 @@ footer { align-self: end; padding-top: 8px; color: #55555b; font-size: 9px; lett
 .admin-status { display: flex; align-items: center; gap: 7px; color: #909097; font-size: 10px; }
 .admin-status i { width: 7px; height: 7px; border-radius: 50%; background: #2ed47a; box-shadow: 0 0 12px #2ed47a; }
 .admin-toast { position: fixed; z-index: 50; top: 24px; right: 24px; padding: 12px 16px; border: 1px solid #3e3e44; border-radius: 9px; background: #202024; box-shadow: 0 14px 40px rgba(0,0,0,.55); font-size: 11px; animation: toast-in .28s ease both; }
+.admin-error-banner, .admin-loading { width: min(100%, 720px); padding: 14px 16px; border-radius: 9px; font-size: 11px; }
+.admin-error-banner { border: 1px solid #6e3037; background: rgba(229,9,20,.09); color: #ff8c93; }
+.admin-loading { border: 1px solid #303036; background: #151519; color: #8f8f96; }
 .admin-view { width: min(100%, 1120px); }
 .admin-view-enter { animation: admin-view-in .35s cubic-bezier(.2,.75,.2,1) both; }
 .admin-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
@@ -291,6 +315,7 @@ footer { align-self: end; padding-top: 8px; color: #55555b; font-size: 9px; lett
 .admin-profile-row:hover, .admin-content-row:hover { border-color: #414148; transform: translateY(-1px); }
 .admin-profile-row img { width: 46px; height: 58px; border-radius: 5px; object-fit: cover; }
 .admin-profile-fields { display: grid; gap: 6px; }
+.admin-profile-fields label:not(:first-child) { margin-top: 4px; }
 .admin-switch { display: inline-flex; align-items: center; gap: 7px; color: #8c8c93; font-size: 9px; cursor: pointer; }
 .admin-switch input { position: absolute; opacity: 0; pointer-events: none; }
 .admin-switch span { position: relative; width: 34px; height: 19px; border-radius: 999px; background: #34343a; transition: background .2s; }
