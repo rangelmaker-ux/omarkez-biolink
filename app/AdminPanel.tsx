@@ -28,6 +28,7 @@ type AdminCard = {
   title: string;
   url: string;
   kind: "link" | "download";
+  image: string;
   published: boolean;
 };
 
@@ -84,6 +85,7 @@ function mapCard(row: CardRow): AdminCard {
     title: row.title,
     url: row.external_url || row.storage_path || "",
     kind: row.kind,
+    image: row.image_url || "",
     published: row.is_published,
   };
 }
@@ -104,6 +106,38 @@ function validDestination(value: string): boolean {
   } catch {
     return false;
   }
+}
+
+function validCardImage(file: File): string | null {
+  if (!file.type.startsWith("image/")) {
+    return "Escolha um arquivo de imagem.";
+  }
+  if (file.size > 15 * 1024 * 1024) {
+    return "A imagem deve ter no máximo 15 MB.";
+  }
+  return null;
+}
+
+async function uploadCardImage(
+  client: SupabaseClient,
+  file: File,
+  profileId: string,
+): Promise<{ path: string; publicUrl: string }> {
+  const extension = file.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
+  const path = `cards/${profileId}/${crypto.randomUUID()}.${extension}`;
+  const { data, error } = await client.storage
+    .from("omarkez-media")
+    .upload(path, file, {
+      cacheControl: "31536000",
+      contentType: file.type,
+      upsert: false,
+    });
+
+  if (error) throw error;
+  const publicUrl = client.storage
+    .from("omarkez-media")
+    .getPublicUrl(data.path).data.publicUrl;
+  return { path: data.path, publicUrl };
 }
 
 async function importLegacyCards(
@@ -210,6 +244,10 @@ export function AdminPanel({ onExit }: { onExit: () => void | Promise<void> }) {
     url: "",
     kind: "link" as "link" | "download",
   });
+  const [newCardImage, setNewCardImage] = useState<File | null>(null);
+  const [newCardImagePreview, setNewCardImagePreview] = useState("");
+  const [cardImageInputKey, setCardImageInputKey] = useState(0);
+  const [uploadingCard, setUploadingCard] = useState(false);
 
   const flash = useCallback((message: string) => {
     setNotice(message);
@@ -365,27 +403,113 @@ export function AdminPanel({ onExit }: { onExit: () => void | Promise<void> }) {
       return;
     }
 
-    const { data, error } = await client
-      .from("cards")
-      .insert({
-        profile_id: newCard.profileId,
-        title,
-        button_label: newCard.kind === "download" ? "Baixar" : "Acessar",
-        external_url: url,
-        kind: newCard.kind,
-        sort_order: Math.max(0, ...cards.map((card, index) => index * 10)) + 10,
-        is_published: true,
-      })
-      .select("*")
-      .single();
+    if (newCardImage) {
+      const imageError = validCardImage(newCardImage);
+      if (imageError) {
+        flash(imageError);
+        return;
+      }
+    }
 
-    if (error) {
-      flash(`Não foi possível criar o card: ${error.message}`);
+    setUploadingCard(true);
+    let uploadedImagePath = "";
+    let imageUrl = "";
+
+    try {
+      if (newCardImage) {
+        const uploaded = await uploadCardImage(
+          client,
+          newCardImage,
+          newCard.profileId,
+        );
+        uploadedImagePath = uploaded.path;
+        imageUrl = uploaded.publicUrl;
+      }
+
+      const { data, error } = await client
+        .from("cards")
+        .insert({
+          profile_id: newCard.profileId,
+          title,
+          button_label: newCard.kind === "download" ? "Baixar" : "Acessar",
+          external_url: url,
+          kind: newCard.kind,
+          image_url: imageUrl || null,
+          sort_order: Math.max(0, ...cards.map((card, index) => index * 10)) + 10,
+          is_published: true,
+        })
+        .select("*")
+        .single();
+
+      if (error) {
+        if (uploadedImagePath) {
+          await client.storage.from("omarkez-media").remove([uploadedImagePath]);
+        }
+        flash(`Não foi possível criar o card: ${error.message}`);
+        return;
+      }
+      setCards((current) => [...current, mapCard(data as CardRow)]);
+      setNewCard((current) => ({ ...current, title: "", url: "" }));
+      setNewCardImage(null);
+      setNewCardImagePreview("");
+      setCardImageInputKey((current) => current + 1);
+      flash("Card publicado com a imagem no Supabase.");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "falha no envio";
+      flash(`Não foi possível carregar a imagem: ${message}`);
+    } finally {
+      setUploadingCard(false);
+    }
+  }
+
+  function chooseNewCardImage(file: File | null) {
+    setNewCardImage(file);
+    if (!file) {
+      setNewCardImagePreview("");
       return;
     }
-    setCards((current) => [...current, mapCard(data as CardRow)]);
-    setNewCard((current) => ({ ...current, title: "", url: "" }));
-    flash("Card publicado no Supabase e liberado no perfil.");
+
+    const imageError = validCardImage(file);
+    if (imageError) {
+      flash(imageError);
+      setNewCardImage(null);
+      setNewCardImagePreview("");
+      setCardImageInputKey((current) => current + 1);
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => setNewCardImagePreview(String(reader.result || ""));
+    reader.readAsDataURL(file);
+  }
+
+  async function replaceCardImage(card: AdminCard, file: File) {
+    const client = getSupabaseBrowserClient();
+    if (!client) return;
+    const imageError = validCardImage(file);
+    if (imageError) {
+      flash(imageError);
+      return;
+    }
+
+    try {
+      const uploaded = await uploadCardImage(client, file, card.profileId);
+      const { error } = await client
+        .from("cards")
+        .update({ image_url: uploaded.publicUrl })
+        .eq("id", card.id);
+      if (error) {
+        await client.storage.from("omarkez-media").remove([uploaded.path]);
+        throw error;
+      }
+      setCards((current) => current.map((item) => (
+        item.id === card.id ? { ...item, image: uploaded.publicUrl } : item
+      )));
+      flash("Imagem do banner atualizada.");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "falha no envio";
+      flash(`Não foi possível atualizar a imagem: ${message}`);
+    }
   }
 
   async function toggleCard(card: AdminCard, published: boolean) {
@@ -545,17 +669,42 @@ export function AdminPanel({ onExit }: { onExit: () => void | Promise<void> }) {
               <div><label htmlFor="card-title">Título do card</label><input id="card-title" value={newCard.title} onChange={(e) => setNewCard({ ...newCard, title: e.target.value })} placeholder="Ex.: Baixar LUT Cinematic" /></div>
               <div><label htmlFor="card-url">Link ou arquivo</label><input id="card-url" value={newCard.url} onChange={(e) => setNewCard({ ...newCard, url: e.target.value })} placeholder="https://..." /></div>
               <div><label htmlFor="card-kind">Tipo</label><select id="card-kind" value={newCard.kind} onChange={(e) => setNewCard({ ...newCard, kind: e.target.value as "link" | "download" })}><option value="link">Link</option><option value="download">Download</option></select></div>
-              <button type="submit">+ Publicar card</button>
+              <div className="admin-image-field">
+                <label htmlFor="card-image">Imagem horizontal</label>
+                <input key={cardImageInputKey} id="card-image" type="file" accept="image/jpeg,image/png,image/webp,image/avif,image/gif,image/heic,image/heif" onChange={(e) => chooseNewCardImage(e.target.files?.[0] || null)} />
+              </div>
+              {newCardImagePreview && (
+                <div className="admin-card-image-preview">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={newCardImagePreview} alt="Prévia do banner" />
+                  <span>{newCardImage?.name}</span>
+                  <button type="button" onClick={() => { chooseNewCardImage(null); setCardImageInputKey((current) => current + 1); }}>Remover</button>
+                </div>
+              )}
+              <button className="admin-publish-card" type="submit" disabled={uploadingCard}>{uploadingCard ? "Enviando imagem..." : "+ Publicar card"}</button>
             </form>
             <p className="admin-context">O novo card será publicado imediatamente em <strong>{currentProfileName || "selecione um perfil"}</strong>.</p>
             <div className="admin-card-list">
               {cards.length === 0 && <div className="admin-empty"><span>▪</span><h2>Nenhum card ainda</h2><p>Crie o primeiro link ou download acima.</p></div>}
               {cards.map((card) => (
                 <article className="admin-content-row" key={card.id}>
-                  <span className="admin-kind">{card.kind === "download" ? "↓" : "↗"}</span>
-                  <div><strong>{card.title}</strong><small>{profiles.find((profile) => profile.id === card.profileId)?.name} • {card.kind}</small></div>
-                  <label className="admin-switch"><input type="checkbox" checked={card.published} onChange={(e) => void toggleCard(card, e.target.checked)} /><span />{card.published ? "Publicado" : "Rascunho"}</label>
-                  <button className="admin-danger" onClick={() => void removeCard(card.id)}>Excluir</button>
+                  <figure className="admin-card-thumb">
+                    {card.image ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={card.image} alt="" />
+                    ) : (
+                      <span className="admin-kind">{card.kind === "download" ? "↓" : "↗"}</span>
+                    )}
+                  </figure>
+                  <div className="admin-card-copy"><strong>{card.title}</strong><small>{profiles.find((profile) => profile.id === card.profileId)?.name} • {card.kind}</small></div>
+                  <div className="admin-row-actions">
+                    <label className="admin-image-action">
+                      <input type="file" accept="image/jpeg,image/png,image/webp,image/avif,image/gif,image/heic,image/heif" onChange={(e) => { const file = e.target.files?.[0]; if (file) void replaceCardImage(card, file); e.currentTarget.value = ""; }} />
+                      {card.image ? "Trocar imagem" : "Adicionar imagem"}
+                    </label>
+                    <label className={`admin-switch admin-publish-switch ${card.published ? "is-published" : "is-draft"}`}><input type="checkbox" checked={card.published} onChange={(e) => void toggleCard(card, e.target.checked)} /><span />{card.published ? "Publicado" : "Não publicado"}</label>
+                    <button className="admin-danger" onClick={() => void removeCard(card.id)}>Excluir</button>
+                  </div>
                 </article>
               ))}
             </div>

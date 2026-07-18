@@ -518,12 +518,12 @@ export default function Home() {
                         rel={card.openInNewTab ? "noreferrer" : undefined}
                         download={card.kind === "download" ? card.fileName || true : undefined}
                       >
-                        {card.image && (
-                          <span
-                            className="profile-content-image"
-                            style={{ backgroundImage: `url(${card.image})` }}
-                          />
-                        )}
+                        <span
+                          className={`profile-content-image${card.image ? "" : " profile-content-image-fallback"}`}
+                          style={card.image ? { backgroundImage: `url(${card.image})` } : undefined}
+                        >
+                          {!card.image && (card.kind === "download" ? "↓" : "↗")}
+                        </span>
                         <span className="profile-content-copy">
                           <strong>{card.title}</strong>
                           {card.description && <small>{card.description}</small>}
