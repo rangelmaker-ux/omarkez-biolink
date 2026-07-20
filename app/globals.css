@@ -313,7 +313,20 @@ footer { align-self: end; padding-top: 8px; color: #55555b; font-size: 9px; lett
 .admin-create-form button, .admin-save { height: 42px; padding: 0 16px; border: 0; border-radius: 7px; background: var(--admin-accent); color: #fff; font-size: 10px; font-weight: 800; cursor: pointer; }
 .admin-profile-list, .admin-card-list { display: grid; gap: 9px; margin-top: 14px; }
 .admin-profile-row, .admin-content-row { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto auto; align-items: center; gap: 13px; padding: 11px; border: 1px solid #29292e; border-radius: 10px; background: #141417; transition: border .2s, transform .2s; }
+.admin-profile-row { grid-template-columns: 34px 52px minmax(0, 1fr) auto auto; }
 .admin-profile-row:hover, .admin-content-row:hover { border-color: #414148; transform: translateY(-1px); }
+.admin-order-help { display: flex; align-items: center; gap: 11px; margin-top: 14px; padding: 11px 13px; border: 1px solid #2e2e34; border-radius: 9px; background: #111114; }
+.admin-order-help > span { color: var(--admin-accent); font-size: 22px; line-height: 1; }
+.admin-order-help p { display: grid; gap: 3px; margin: 0; color: #76767d; font-size: 9px; }
+.admin-order-help strong { color: #d3d3d6; font-size: 10px; }
+.admin-order-help small { margin-left: auto; color: #49df8d; font-size: 8px; white-space: nowrap; }
+.admin-drag-handle { display: grid; place-items: center; align-self: stretch; min-height: 58px; padding: 4px 0; border: 1px solid #34343a; border-radius: 7px; background: #0e0e11; color: #8b8b92; cursor: grab; touch-action: none; user-select: none; }
+.admin-drag-handle:hover, .admin-drag-handle:focus-visible { border-color: var(--admin-accent); color: #fff; outline: none; }
+.admin-drag-handle:active { cursor: grabbing; }
+.admin-drag-handle span { font-size: 20px; line-height: .8; }
+.admin-drag-handle small { color: #626269; font-size: 8px; }
+.admin-profile-row-dragging { z-index: 3; border-color: var(--admin-accent); background: #1a171a; opacity: .9; transform: scale(1.015); box-shadow: 0 16px 38px rgba(0,0,0,.42); }
+.admin-profile-dragging { cursor: grabbing; user-select: none; }
 .admin-profile-row img { width: 46px; height: 58px; border-radius: 5px; object-fit: cover; }
 .admin-profile-fields { display: grid; gap: 6px; }
 .admin-profile-fields label:not(:first-child) { margin-top: 4px; }
@@ -441,11 +454,17 @@ footer { align-self: end; padding-top: 8px; color: #55555b; font-size: 9px; lett
   .admin-create-form, .admin-card-form { grid-template-columns: 1fr; }
   .admin-create-form button { width: 100%; }
   .admin-profile-row, .admin-content-row { grid-template-columns: 47px minmax(0, 1fr); }
+  .admin-profile-row { grid-template-columns: 32px 47px minmax(0, 1fr); }
+  .admin-profile-row .admin-drag-handle { grid-row: 1 / span 2; min-height: 72px; }
+  .admin-profile-row .admin-switch { grid-column: 2 / 3; }
+  .admin-profile-row .admin-danger { grid-column: 3 / 4; }
+  .admin-order-help { align-items: flex-start; }
+  .admin-order-help small { font-size: 7px; }
   .admin-content-row { grid-template-columns: 96px minmax(0, 1fr); }
   .admin-card-thumb { width: 96px; height: 54px; }
   .admin-content-row .admin-row-actions { grid-column: 1 / -1; justify-content: flex-end; flex-wrap: wrap; }
-  .admin-profile-row .admin-switch, .admin-content-row .admin-switch { grid-column: 1 / 2; }
-  .admin-profile-row .admin-danger, .admin-content-row .admin-danger { grid-column: 2 / 3; justify-self: end; }
+  .admin-content-row .admin-switch { grid-column: 1 / 2; }
+  .admin-content-row .admin-danger { grid-column: 2 / 3; justify-self: end; }
   .admin-setting { align-items: flex-start; flex-direction: column; gap: 12px; padding: 16px 0; }
   .admin-setting input:not([type=color]) { width: 100%; }
   .admin-toast { top: 68px; right: 12px; left: 12px; text-align: center; }

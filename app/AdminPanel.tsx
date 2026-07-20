@@ -1,6 +1,15 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import {
+  FormEvent,
+  KeyboardEvent as ReactKeyboardEvent,
+  PointerEvent as ReactPointerEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import type {
@@ -248,6 +257,11 @@ export function AdminPanel({ onExit }: { onExit: () => void | Promise<void> }) {
   const [newCardImagePreview, setNewCardImagePreview] = useState("");
   const [cardImageInputKey, setCardImageInputKey] = useState(0);
   const [uploadingCard, setUploadingCard] = useState(false);
+  const [draggedProfileId, setDraggedProfileId] = useState<string | null>(null);
+  const [savingProfileOrder, setSavingProfileOrder] = useState(false);
+  const profilesOrderRef = useRef<AdminProfile[]>([]);
+  const draggedProfileIdRef = useRef<string | null>(null);
+  const profileDragSnapshotRef = useRef<AdminProfile[]>([]);
 
   const flash = useCallback((message: string) => {
     setNotice(message);
@@ -287,6 +301,7 @@ export function AdminPanel({ onExit }: { onExit: () => void | Promise<void> }) {
       cloudCards = await importLegacyCards(client, cloudProfiles, cloudCards);
 
       if (!active) return;
+      profilesOrderRef.current = cloudProfiles;
       setProfiles(cloudProfiles);
       setCards(cloudCards);
       setNewCard((current) => ({
@@ -311,6 +326,10 @@ export function AdminPanel({ onExit }: { onExit: () => void | Promise<void> }) {
     };
   }, []);
 
+  useEffect(() => {
+    profilesOrderRef.current = profiles;
+  }, [profiles]);
+
   const publishedProfiles = profiles.filter((profile) => profile.published).length;
   const publishedCards = cards.filter((card) => card.published).length;
   const currentProfileName = useMemo(
@@ -319,11 +338,152 @@ export function AdminPanel({ onExit }: { onExit: () => void | Promise<void> }) {
   );
 
   function editProfile(id: string, patch: Partial<AdminProfile>) {
-    setProfiles((current) =>
-      current.map((profile) =>
+    setProfiles((current) => {
+      const next = current.map((profile) =>
         profile.id === id ? { ...profile, ...patch } : profile,
+      );
+      profilesOrderRef.current = next;
+      return next;
+    });
+  }
+
+  function reorderProfiles(activeId: string, overId: string) {
+    if (activeId === overId) return;
+    const current = profilesOrderRef.current;
+    const from = current.findIndex((profile) => profile.id === activeId);
+    const to = current.findIndex((profile) => profile.id === overId);
+    if (from < 0 || to < 0) return;
+
+    const next = [...current];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    profilesOrderRef.current = next;
+    setProfiles(next);
+  }
+
+  async function saveProfileOrder(
+    orderedProfiles: AdminProfile[],
+    previousProfiles: AdminProfile[],
+  ) {
+    const client = getSupabaseBrowserClient();
+    if (!client) return;
+    setSavingProfileOrder(true);
+
+    const ordered = orderedProfiles.map((profile, index) => ({
+      ...profile,
+      order: (index + 1) * 10,
+    }));
+    const results = await Promise.all(
+      ordered.map((profile) =>
+        client
+          .from("profiles")
+          .update({ sort_order: profile.order })
+          .eq("id", profile.id),
       ),
     );
+    const failed = results.find((result) => result.error)?.error;
+
+    if (failed) {
+      await Promise.all(
+        previousProfiles.map((profile) =>
+          client
+            .from("profiles")
+            .update({ sort_order: profile.order })
+            .eq("id", profile.id),
+        ),
+      );
+      profilesOrderRef.current = previousProfiles;
+      setProfiles(previousProfiles);
+      flash(`Não foi possível salvar a ordem: ${failed.message}`);
+    } else {
+      profilesOrderRef.current = ordered;
+      setProfiles(ordered);
+      flash("Nova ordem dos perfis salva no Supabase.");
+    }
+    setSavingProfileOrder(false);
+  }
+
+  function startProfileDrag(
+    event: ReactPointerEvent<HTMLButtonElement>,
+    profileId: string,
+  ) {
+    if (savingProfileOrder || event.button !== 0) return;
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    profileDragSnapshotRef.current = [...profilesOrderRef.current];
+    draggedProfileIdRef.current = profileId;
+    setDraggedProfileId(profileId);
+    document.body.classList.add("admin-profile-dragging");
+  }
+
+  function moveDraggedProfile(event: ReactPointerEvent<HTMLButtonElement>) {
+    const activeId = draggedProfileIdRef.current;
+    if (!activeId) return;
+    event.preventDefault();
+
+    const row = document
+      .elementFromPoint(event.clientX, event.clientY)
+      ?.closest<HTMLElement>("[data-profile-id]");
+    const overId = row?.dataset.profileId;
+    if (overId) reorderProfiles(activeId, overId);
+
+    const scrollArea = document.querySelector<HTMLElement>(".admin-main");
+    if (!scrollArea) return;
+    const bounds = scrollArea.getBoundingClientRect();
+    const scrollTarget = getComputedStyle(scrollArea).overflowY === "visible"
+      ? window
+      : scrollArea;
+    if (event.clientY < bounds.top + 80) scrollTarget.scrollBy({ top: -14 });
+    if (event.clientY > bounds.bottom - 80) scrollTarget.scrollBy({ top: 14 });
+  }
+
+  async function finishProfileDrag(event: ReactPointerEvent<HTMLButtonElement>) {
+    const activeId = draggedProfileIdRef.current;
+    if (!activeId) return;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    draggedProfileIdRef.current = null;
+    setDraggedProfileId(null);
+    document.body.classList.remove("admin-profile-dragging");
+
+    const previous = profileDragSnapshotRef.current;
+    const current = profilesOrderRef.current;
+    if (previous.map((profile) => profile.id).join("|") !== current.map((profile) => profile.id).join("|")) {
+      await saveProfileOrder(current, previous);
+    }
+  }
+
+  function cancelProfileDrag(event: ReactPointerEvent<HTMLButtonElement>) {
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    const previous = profileDragSnapshotRef.current;
+    profilesOrderRef.current = previous;
+    setProfiles(previous);
+    draggedProfileIdRef.current = null;
+    setDraggedProfileId(null);
+    document.body.classList.remove("admin-profile-dragging");
+  }
+
+  async function moveProfileWithKeyboard(
+    event: ReactKeyboardEvent<HTMLButtonElement>,
+    profileId: string,
+  ) {
+    if (event.key !== "ArrowUp" && event.key !== "ArrowDown") return;
+    event.preventDefault();
+    if (savingProfileOrder) return;
+
+    const previous = [...profilesOrderRef.current];
+    const index = previous.findIndex((profile) => profile.id === profileId);
+    const target = event.key === "ArrowUp" ? index - 1 : index + 1;
+    if (index < 0 || target < 0 || target >= previous.length) return;
+    const next = [...previous];
+    const [moved] = next.splice(index, 1);
+    next.splice(target, 0, moved);
+    profilesOrderRef.current = next;
+    setProfiles(next);
+    await saveProfileOrder(next, previous);
   }
 
   async function persistProfile(id: string, patch: Partial<AdminProfile>) {
@@ -641,9 +801,33 @@ export function AdminPanel({ onExit }: { onExit: () => void | Promise<void> }) {
               <div><label htmlFor="profile-image">Imagem ou URL</label><input id="profile-image" value={newProfile.image} onChange={(e) => setNewProfile({ ...newProfile, image: e.target.value })} placeholder="https://... ou /imagem.jpg" /></div>
               <button type="submit">+ Criar perfil</button>
             </form>
+            <div className="admin-order-help">
+              <span aria-hidden="true">⠿</span>
+              <p><strong>Organizar perfis</strong>Segure a alça e arraste para mudar a posição. A ordem é salva ao soltar.</p>
+              {savingProfileOrder && <small>Salvando ordem...</small>}
+            </div>
             <div className="admin-profile-list">
-              {profiles.map((profile) => (
-                <article className="admin-profile-row" key={profile.id}>
+              {profiles.map((profile, index) => (
+                <article
+                  className={`admin-profile-row${draggedProfileId === profile.id ? " admin-profile-row-dragging" : ""}`}
+                  data-profile-id={profile.id}
+                  key={profile.id}
+                >
+                  <button
+                    aria-label={`Mover ${profile.name}. Posição ${index + 1} de ${profiles.length}`}
+                    className="admin-drag-handle"
+                    disabled={savingProfileOrder}
+                    onKeyDown={(event) => void moveProfileWithKeyboard(event, profile.id)}
+                    onPointerCancel={cancelProfileDrag}
+                    onPointerDown={(event) => startProfileDrag(event, profile.id)}
+                    onPointerMove={moveDraggedProfile}
+                    onPointerUp={(event) => void finishProfileDrag(event)}
+                    title="Segure e arraste para reorganizar"
+                    type="button"
+                  >
+                    <span aria-hidden="true">⠿</span>
+                    <small>{index + 1}</small>
+                  </button>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={profile.image} alt="" />
                   <div className="admin-profile-fields">
