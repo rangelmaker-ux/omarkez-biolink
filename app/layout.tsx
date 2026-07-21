@@ -2,9 +2,9 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "@omarkez_ | Perfis",
+  title: "@rangelmaker_ | Perfis",
   description:
-    "Configurações, conteúdos e downloads de fotografia e vídeo por @omarkez_.",
+    "Configurações, conteúdos e downloads de fotografia e vídeo por @rangelmaker_.",
   icons: { icon: "/favicon.svg" },
 };
 

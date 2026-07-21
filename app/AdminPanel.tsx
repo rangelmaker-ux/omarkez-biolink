@@ -239,7 +239,7 @@ export function AdminPanel({ onExit }: { onExit: () => void | Promise<void> }) {
   const [profiles, setProfiles] = useState<AdminProfile[]>([]);
   const [cards, setCards] = useState<AdminCard[]>([]);
   const [appearance, setAppearance] = useState<AdminAppearance>({
-    handle: "@omarkez_",
+    handle: "@rangelmaker_",
     accent: "#e50914",
     motion: true,
   });

@@ -1,7 +1,7 @@
 begin;
 
 -- =========================================================
--- @omarkez_ Bio Link — banco, segurança e Storage
+-- @rangelmaker_ Bio Link — banco, segurança e Storage
 -- =========================================================
 
 create schema if not exists private;
@@ -23,9 +23,9 @@ comment on table public.admin_users is
 
 create table if not exists public.site_settings (
   id smallint primary key default 1 check (id = 1),
-  handle text not null default '@omarkez_',
+  handle text not null default '@rangelmaker_',
   subtitle text not null default 'Toque em um perfil para acessar os conteúdos.',
-  footer_text text not null default 'Conteúdo e configurações por @omarkez_',
+  footer_text text not null default 'Conteúdo e configurações por @rangelmaker_',
   accent_color text not null default '#e50914'
     check (accent_color ~ '^#[0-9a-fA-F]{6}$'),
   motion_enabled boolean not null default true,
@@ -311,9 +311,9 @@ insert into public.site_settings (
 )
 values (
   1,
-  '@omarkez_',
+  '@rangelmaker_',
   'Toque em um perfil para acessar os conteúdos.',
-  'Conteúdo e configurações por @omarkez_',
+  'Conteúdo e configurações por @rangelmaker_',
   '#e50914',
   true
 )

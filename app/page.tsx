@@ -43,9 +43,9 @@ type SiteSettings = {
 };
 
 const fallbackSettings: SiteSettings = {
-  handle: "@omarkez_",
+  handle: "@rangelmaker_",
   subtitle: "Toque em um perfil para acessar os conteúdos.",
-  footerText: "Conteúdo e configurações por @omarkez_",
+  footerText: "Conteúdo e configurações por @rangelmaker_",
   accent: "#e50914",
   motion: true,
 };
